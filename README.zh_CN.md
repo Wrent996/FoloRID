@@ -1,6 +1,6 @@
 # FoloRID — 开源 ESP32 Remote ID 接收器
 
-[English](README.md) | [简体中文](README.zh_CN.md)
+[English](README.en.md) | [简体中文](README.zh_CN.md)
 
 基于 **FoloToy AI Passport**（ESP32-C3）的开源无人机 **Remote ID（远程识别）接收与解析**应用。
 
