@@ -159,16 +159,14 @@ static void show_about(void)
         return;
     }
     rid_ui_set_page(RID_UI_PAGE_DETAIL);
-    rid_ui_set_hint("OK/长按:返回列表");
-    /* 详情页在无选中时会显示“无目标数据”；这里通过 hint 补充说明 */
+    rid_ui_set_hint("OK/长按返回列表");
     bsp_lvgl_unlock();
-    /* 用状态行展示关于信息 */
     if (bsp_lvgl_lock(200)) {
-        rid_ui_set_status(RID_UI_SCAN_RUNNING, 0, s_store.wifi_hits, s_store.ble_hits,
+        rid_ui_set_status(map_scan_state(), 0, s_store.wifi_hits, s_store.ble_hits,
                           bsp_battery_soc());
         bsp_lvgl_unlock();
     }
-    rid_ui_set_hint("开源RID接收器  OpenDroneID");
+    rid_ui_set_hint("开源RID OpenDroneID");
 }
 
 static void process_key(bsp_btn_t btn, bsp_btn_ev_t ev)
@@ -210,8 +208,8 @@ static void process_key(bsp_btn_t btn, bsp_btn_ev_t ev)
             if (!bsp_lvgl_lock(100)) {
                 return;
             }
-            rid_ui_set_hint(rid_radio_paused() ? "已暂停  OK长按:恢复" :
-                            "OK:详情  长按:暂停  UP/DOWN:选择");
+            rid_ui_set_hint(rid_radio_paused() ? "已暂停 长按恢复" :
+                            "UP/DOWN选择 OK详情 长按暂停");
             bsp_lvgl_unlock();
         }
         return;
