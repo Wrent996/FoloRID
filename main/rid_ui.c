@@ -73,7 +73,7 @@ void rid_ui_fonts_init(void)
     if (s_font_ready) {
         return;
     }
-    /* 拷贝静态字体描述符并挂 fallback；不可改 Flash 中的 const 字体。 */
+    /* 拷贝静态字体描述符；应用子集已覆盖全部界面中文，避免 fallback 产生方框 */
     s_font_ui = rid_font_16;
     s_font_ui.fallback = &lv_font_montserrat_14;
     s_font_ready = true;
@@ -122,8 +122,11 @@ static void build_list_page(void)
 static void build_detail_page(void)
 {
     s_detail_panel = mk_panel(s_scr, 8, 56, 224, 220, RID_COL_PANEL);
+    /* 详情可滚动，避免长文本被面板裁剪 */
+    lv_obj_set_scroll_dir(s_detail_panel, LV_DIR_VER);
+    lv_obj_set_style_pad_all(s_detail_panel, 6, 0);
     s_detail_body = mk_label(s_detail_panel, "", &s_font_ui, RID_COL_TEXT);
-    lv_obj_set_width(s_detail_body, 208);
+    lv_obj_set_width(s_detail_body, 206);
     lv_obj_align(s_detail_body, LV_ALIGN_TOP_LEFT, 0, 0);
     lv_label_set_long_mode(s_detail_body, LV_LABEL_LONG_WRAP);
     lv_obj_add_flag(s_detail_panel, LV_OBJ_FLAG_HIDDEN);
@@ -158,26 +161,32 @@ void rid_ui_create(void)
     lv_obj_set_style_bg_color(s_scan_dot, lv_color_hex(RID_COL_MUTED), 0);
     lv_obj_set_style_border_width(s_scan_dot, 0, 0);
 
-    s_title = mk_label(s_top_bar, "RID 接收器", &s_font_ui, RID_COL_ACCENT);
+    s_title = mk_label(s_top_bar, "RID接收器", &s_font_ui, RID_COL_ACCENT);
     lv_obj_set_pos(s_title, 26, 8);
+    lv_obj_set_width(s_title, 100);
+    lv_label_set_long_mode(s_title, LV_LABEL_LONG_DOT);
 
-    /* 右上角电量：本主题无白云，直接放顶栏右侧空闲区 */
-    s_battery = mk_label(s_top_bar, "--", &s_font_ui, RID_COL_MUTED);
-    lv_obj_align(s_battery, LV_ALIGN_TOP_RIGHT, -10, 8);
+    /* 右上角电量：缩短文案，避免与标题挤压裁剪 */
+    s_battery = mk_label(s_top_bar, "--%", &s_font_ui, RID_COL_MUTED);
+    lv_obj_align(s_battery, LV_ALIGN_TOP_RIGHT, -8, 8);
     lv_obj_set_style_text_align(s_battery, LV_TEXT_ALIGN_RIGHT, 0);
+    lv_label_set_long_mode(s_battery, LV_LABEL_LONG_DOT);
+    lv_obj_set_width(s_battery, 56);
 
-    /* 状态行 */
-    s_status_line = mk_label(s_scr, "扫描启动中...", &s_font_ui, RID_COL_MUTED);
+    /* 状态行：缩短，保证 240px 内可完整显示 */
+    s_status_line = mk_label(s_scr, "启动中...", &s_font_ui, RID_COL_MUTED);
     lv_obj_set_pos(s_status_line, 10, 46);
     lv_obj_set_width(s_status_line, 220);
+    lv_label_set_long_mode(s_status_line, LV_LABEL_LONG_DOT);
 
     build_list_page();
     build_detail_page();
 
-    s_hint = mk_label(s_scr, "OK:详情  长按:暂停  UP/DOWN:选择", &s_font_ui, RID_COL_MUTED);
-    lv_obj_set_pos(s_hint, 6, 286);
-    lv_obj_set_width(s_hint, 228);
+    s_hint = mk_label(s_scr, "UP/DOWN选择 OK详情 长按暂停", &s_font_ui, RID_COL_MUTED);
+    lv_obj_set_pos(s_hint, 4, 288);
+    lv_obj_set_width(s_hint, 232);
     lv_obj_set_style_text_align(s_hint, LV_TEXT_ALIGN_CENTER, 0);
+    lv_label_set_long_mode(s_hint, LV_LABEL_LONG_DOT);
 
     s_page = RID_UI_PAGE_LIST;
     lv_screen_load(s_scr);
@@ -204,11 +213,11 @@ void rid_ui_set_page(rid_ui_page_t page)
     if (page == RID_UI_PAGE_LIST) {
         lv_obj_remove_flag(s_list_panel, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(s_detail_panel, LV_OBJ_FLAG_HIDDEN);
-        lv_label_set_text(s_hint, "OK:详情  长按:暂停  UP/DOWN:选择");
+        lv_label_set_text(s_hint, "UP/DOWN选择 OK详情 长按暂停");
     } else {
         lv_obj_add_flag(s_list_panel, LV_OBJ_FLAG_HIDDEN);
         lv_obj_remove_flag(s_detail_panel, LV_OBJ_FLAG_HIDDEN);
-        lv_label_set_text(s_hint, "OK/长按:返回列表");
+        lv_label_set_text(s_hint, "OK/长按返回列表");
     }
 }
 
@@ -255,17 +264,17 @@ void rid_ui_set_status(rid_ui_scan_state_t scan_state, int uav_count,
     if (s_scan_dot) {
         lv_obj_set_style_bg_color(s_scan_dot, lv_color_hex(dot), 0);
     }
-    lv_label_set_text_fmt(s_status_line, "%s  目标 %d  WiFi %u  BLE %u",
+    lv_label_set_text_fmt(s_status_line, "%s 目标%d W%u B%u",
                           state_text, uav_count, wifi_hits, ble_hits);
 
     if (s_battery) {
         if (battery_soc < 0) {
-            lv_label_set_text(s_battery, "电量 --");
+            lv_label_set_text(s_battery, "--%");
         } else if (battery_soc > 100) {
             battery_soc = 100;
         }
         if (battery_soc >= 0) {
-            lv_label_set_text_fmt(s_battery, "电量 %d%%", battery_soc);
+            lv_label_set_text_fmt(s_battery, "%d%%", battery_soc);
             uint32_t c = battery_soc <= 15 ? RID_COL_RED :
                          battery_soc <= 30 ? RID_COL_AMBER : RID_COL_MUTED;
             lv_obj_set_style_text_color(s_battery, lv_color_hex(c), 0);
@@ -334,43 +343,37 @@ void rid_ui_refresh(const rid_store_t *store, int selected_index,
                                         lv_color_hex(sel ? RID_COL_TEXT : status_color(u->status)),
                                         0);
         }
-        if (n == 0 && s_row_labels[0]) {
-            /* 空状态：不占用隐藏行，直接在列表区提示 */
-        }
         if (n == 0) {
             for (int row = 0; row < RID_STORE_MAX_UAVS; row++) {
                 if (s_rows[row]) {
                     lv_obj_add_flag(s_rows[row], LV_OBJ_FLAG_HIDDEN);
                 }
             }
-            /* 用状态行表达空态，避免与列表控件抢布局 */
             if (s_status_line && scan_state == RID_UI_SCAN_RUNNING) {
-                /* status 已由 set_status 写入；额外空态提示写 hint */
-                lv_label_set_text(s_hint, "未发现无人机广播  OK:关于");
+                lv_label_set_text(s_hint, "未发现无人机广播 OK关于");
             }
         }
     } else if (s_page == RID_UI_PAGE_DETAIL && s_detail_body) {
-        /* selected_index 指向 store 槽位 */
         if (selected_index < 0 || selected_index >= RID_STORE_MAX_UAVS ||
             !store->slots[selected_index].used) {
             lv_label_set_text(s_detail_body, "无目标数据");
             return;
         }
         const rid_uav_t *u = &store->slots[selected_index];
-        char buf[480];
+        char buf[420];
         int pos = 0;
         pos += snprintf(buf + pos, sizeof(buf) - (size_t)pos,
-                        "飞行器ID\n%s\n\n操作员ID\n%s\n\n",
+                        "飞行器ID %s\n操作员ID %s\n",
                         u->has_basic && u->uas_id[0] ? u->uas_id : "-",
                         u->has_operator && u->op_id[0] ? u->op_id : "-");
         pos += snprintf(buf + pos, sizeof(buf) - (size_t)pos,
-                        "状态 %s  链路 %s  RSSI %d\n",
+                        "状态%s 链路%s %ddBm\n",
                         rid_odid_status_text(u->status),
                         rid_odid_link_text(u->link), (int)u->rssi);
         if (u->has_location) {
             pos += snprintf(buf + pos, sizeof(buf) - (size_t)pos,
-                            "纬度 %.6f\n经度 %.6f\n海拔 %.1f m\n高 %s %.1f m\n"
-                            "速度 %.1f m/s  航向 %.0f°\n",
+                            "纬度 %.5f\n经度 %.5f\n海拔 %.0fm %s%.0fm\n"
+                            "速度 %.1fm/s 航向 %.0f°\n",
                             u->lat, u->lon, (double)u->alt_m,
                             u->height_m >= 0 ? "离地" : "高",
                             (double)u->height_m,
@@ -380,13 +383,15 @@ void rid_ui_refresh(const rid_store_t *store, int selected_index,
         }
         if (u->has_system) {
             pos += snprintf(buf + pos, sizeof(buf) - (size_t)pos,
-                            "操作员位置 %.5f, %.5f\n", (double)u->op_lat, (double)u->op_lon);
+                            "操作员位置 %.4f, %.4f\n",
+                            (double)u->op_lat, (double)u->op_lon);
         }
         uint32_t age_s = (now_ms >= u->last_ms) ? (now_ms - u->last_ms) / 1000u : 0;
         snprintf(buf + pos, sizeof(buf) - (size_t)pos,
-                 "更新 %lus前  帧 %lu\nMAC %02X:%02X:%02X:%02X:%02X:%02X",
+                 "更新 %lus前 帧%lu\n%02X:%02X:%02X:%02X:%02X:%02X",
                  (unsigned long)age_s, (unsigned long)u->hit_count,
                  u->mac[0], u->mac[1], u->mac[2], u->mac[3], u->mac[4], u->mac[5]);
         lv_label_set_text(s_detail_body, buf);
+        lv_obj_scroll_to_y(s_detail_panel, 0, LV_ANIM_OFF);
     }
 }
