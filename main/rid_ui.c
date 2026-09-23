@@ -7,9 +7,9 @@
 
 /*
  * 视觉设计锚点：航空 ATC / 无线电频谱值守终端。
- * 背景近黑、面板深蓝灰、信号青强调、告警琥珀/红。
+ * 背景纯黑、面板深蓝灰、信号青强调、告警琥珀/红。
  */
-#define RID_COL_BG       0x070B14
+#define RID_COL_BG       0x000000
 #define RID_COL_PANEL    0x0F172A
 #define RID_COL_PANEL2   0x111C33
 #define RID_COL_LINE     0x1E293B
